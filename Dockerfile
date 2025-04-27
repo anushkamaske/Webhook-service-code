@@ -1,24 +1,24 @@
-# Stage 1: Build the Go binary
+# ──────────────── Stage 1: Builder ────────────────
 FROM golang:1.21-alpine AS builder
 
-# Install git so `go mod download` can pull modules
+# 1) Install git so go mod can fetch modules
 RUN apk add --no-cache git
 
 WORKDIR /app
 
-# Copy dependency definitions and download modules
+# 2) Copy only go.mod and go.sum, then download deps
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the source code and compile
+# 3) Copy the rest of your code and compile
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o webhook-service ./cmd/server
 
-# Stage 2: Create minimal runtime image
+# ────────────── Stage 2: Minimal Runtime ──────────────
 FROM scratch
 
-# Copy the built binary from the builder stage
+# Copy the statically‐built binary
 COPY --from=builder /app/webhook-service /webhook-service
 
-# Run the webhook-service binary by default
+# Run it!
 ENTRYPOINT ["/webhook-service"]
