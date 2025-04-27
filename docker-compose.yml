@@ -1,8 +1,9 @@
 services:
   web:
+    # ← platform belongs here, not inside build
+    platform: linux/amd64
     build:
       context: .
-      platform: linux/amd64
     env_file:
       - webhook.env
     depends_on:
@@ -64,3 +65,8 @@ services:
 volumes:
   pgdata:
   mongodata:
+
+
+  
+    
+     
