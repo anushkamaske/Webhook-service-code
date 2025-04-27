@@ -1,29 +1,29 @@
-# ───────────── Stage 1: Builder ─────────────────
-FROM golang:1.21-slim AS builder
+# ─── Stage 1: Builder ─────────────────────────────────────────────
+FROM golang:1.21 AS builder
 
-# Install git (for go mod download) and ca-certs
+# Install git & CA certificates so `go mod download` works reliably
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy module definitions, download deps
+# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the code & compile
+# Copy and build
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o webhook-service ./cmd/server
 
-# ───────────── Stage 2: Minimal Runtime ──────────
+# ─── Stage 2: Minimal Runtime ────────────────────────────────────
 FROM gcr.io/distroless/static:nonroot
+
+# Copy CA certs for HTTPS calls (if your service ever calls out)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy the compiled binary
 COPY --from=builder /app/webhook-service /webhook-service
 
-# Port & entrypoint
 EXPOSE 8080
 ENTRYPOINT ["/webhook-service"]
-
-
