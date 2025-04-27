@@ -1,25 +1,29 @@
-# ────────────────────── Stage 1: Builder ──────────────────────
-FROM golang:1.21-alpine3.18 AS builder
+# ─── Stage 1: Builder ──────────────────────────────────────────────────────────
+FROM golang:1.21-bullseye AS builder
 
-# Install git so `go mod download` can fetch modules
-RUN apk update && apk add --no-cache git
-
+# Create and switch to our app directory
 WORKDIR /app
 
-# Copy go.mod and go.sum, then download dependencies
+# Only copy go.mod and go.sum first, so we can cache deps
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy remaining source code and compile
+# Now bring in the rest of the source and compile
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o webhook-service ./cmd/server
+RUN CGO_ENABLED=0 \
+    GOOS=linux \
+    go build -ldflags="-s -w" \
+             -o webhook-service \
+             ./cmd/server
 
-# ──────────────────── Stage 2: Minimal Runtime ────────────────────
+# ─── Stage 2: Minimal Runtime ─────────────────────────────────────────────────
 FROM scratch
 
-# Copy the compiled binary from the builder stage
+# Copy the statically-built binary
 COPY --from=builder /app/webhook-service /webhook-service
 
-# Run the service
-ENTRYPOINT ["/webhook-service"]
+# If you expose a port, document it
+EXPOSE 8080
 
+# Run as the entrypoint
+ENTRYPOINT ["/webhook-service"]
