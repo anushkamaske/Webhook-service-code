@@ -1,6 +1,5 @@
 services:
   web:
-    # ← platform belongs here, not inside build
     platform: linux/amd64
     build:
       context: .
@@ -66,7 +65,5 @@ volumes:
   pgdata:
   mongodata:
 
-
-  
     
      
