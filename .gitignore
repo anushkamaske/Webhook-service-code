@@ -1,25 +1,34 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Binaries
+/webhook-service
 
-# Test binary, built with `go test -c`
-*.test
+# Build output
+/bin/
+/pkg/
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Go coverage outputs
 *.out
+*.cover
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Dependency directories (if you vendor)
+/vendor/
 
-# Go workspace file
-go.work
-go.work.sum
-
-# env file
+# Environment files
 .env
+webhook.env
+
+# Docker Compose overrides
+docker-compose.override.yml
+
+# IDE / editor configs
+*.swp
+*~
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
