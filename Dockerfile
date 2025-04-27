@@ -1,29 +1,29 @@
-# ─── Stage 1: Builder ──────────────────────────────────────────────────────────
-FROM golang:1.21-bullseye AS builder
+# ───────────── Stage 1: Builder ─────────────────
+FROM golang:1.21-slim AS builder
 
-# Create and switch to our app directory
+# Install git (for go mod download) and ca-certs
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Only copy go.mod and go.sum first, so we can cache deps
+# Copy module definitions, download deps
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Now bring in the rest of the source and compile
+# Copy the rest of the code & compile
 COPY . .
-RUN CGO_ENABLED=0 \
-    GOOS=linux \
-    go build -ldflags="-s -w" \
-             -o webhook-service \
-             ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o webhook-service ./cmd/server
 
-# ─── Stage 2: Minimal Runtime ─────────────────────────────────────────────────
-FROM scratch
+# ───────────── Stage 2: Minimal Runtime ──────────
+FROM gcr.io/distroless/static:nonroot
 
-# Copy the statically-built binary
+# Copy the compiled binary
 COPY --from=builder /app/webhook-service /webhook-service
 
-# If you expose a port, document it
+# Port & entrypoint
 EXPOSE 8080
-
-# Run as the entrypoint
 ENTRYPOINT ["/webhook-service"]
+
+
